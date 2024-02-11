@@ -1,0 +1,78 @@
+definitions:
+  main.Person:
+    properties:
+      age:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /person:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene un listado de todas las personas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Person'
+            type: array
+      summary: Lista todas las personas
+      tags:
+      - personas
+    post:
+      consumes:
+      - application/json
+      description: Agrega una nueva persona al sistema
+      parameters:
+      - description: Persona a agregar
+        in: body
+        name: person
+        required: true
+        schema:
+          $ref: '#/definitions/main.Person'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Person'
+      summary: Agrega una nueva persona
+      tags:
+      - personas
+  /person/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene detalles de una persona específica por su ID
+      parameters:
+      - description: ID de la Persona
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Person'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Obtiene una persona por su ID
+      tags:
+      - personas
+swagger: "2.0"

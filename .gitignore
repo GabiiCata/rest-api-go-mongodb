@@ -1,0 +1,20 @@
+# Binarios compilados
+/bin/
+/pkg/
+
+# Dependencias
+/vendor/
+
+# Archivos de configuración específicos del entorno
+.env
+*.env.local
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# IDEs y editores
+.idea/
+*.swp
+*.swo
+.vscode/
