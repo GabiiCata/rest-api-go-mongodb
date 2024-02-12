@@ -7,14 +7,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	swaggerFiles "github.com/swaggo/files"
     ginSwagger "github.com/swaggo/gin-swagger"
     _ "github.com/api-rest-go/docs" // Usa el nombre de tu módulo aquí
 
+
+	"github.com/joho/godotenv"
+
+
+	//import pkg/db folder
+	"github.com/api-rest-go/pkg/db"
 
 )
 
@@ -24,25 +27,7 @@ type Person struct {
 	Age  int    `json:"age" bson:"age"`
 }
 
-var client *mongo.Client
 
-func connectToMongoDB() {
-	var err error
-	// Asegúrate de reemplazar "root" y "example" con tu usuario y contraseña reales.
-	// Además, reemplaza "mongo" con "localhost" si estás ejecutando este código fuera de Docker,
-	// o mantenlo como "mongo" si este código se ejecuta dentro de otro contenedor de Docker
-	// que forma parte de la misma red que tu contenedor de MongoDB.
-	client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://root:example@mongo:27017"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 // getPerson godoc
 // @Summary Lista todas las personas
@@ -53,18 +38,13 @@ func connectToMongoDB() {
 // @Success 200 {array} Person
 // @Router /person [get]
 func getPerson(c *gin.Context) {
-	collection := client.Database("apirestgo").Collection("people")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	var people []*db.Person
 
-	var people []Person
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = cursor.All(ctx, &people); err != nil {
-		log.Fatal(err)
-	}
+	// find all people with db.FindAll
+	people = db.FindAll()
+
+	
+	
 
 	c.IndentedJSON(http.StatusOK, people)
 }
@@ -79,7 +59,7 @@ func getPerson(c *gin.Context) {
 // @Success 201 {object} Person
 // @Router /person [post]
 func postPerson(c *gin.Context) {
-	collection := client.Database("apirestgo").Collection("people")
+	collection := db.GetCollections()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -108,34 +88,31 @@ func postPerson(c *gin.Context) {
 // @Failure 404 {object} map[string]interface{}
 // @Router /person/{id} [get]
 func getPersonByID(c *gin.Context) {
-	collection := client.Database("apirestgo").Collection("people")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+	
 	id := c.Param("id")
-	var person Person
-	err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&person)
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "person not found"})
-		return
-	}
+	var person *db.Person
+	// find person by id with db.FindByID
+	person = db.FindByID(id)
 
 	c.IndentedJSON(http.StatusOK, person)
 }
 
 func main() {
-	connectToMongoDB()
-	defer func() {
-		if err := client.Disconnect(context.Background()); err != nil {
-			panic(err)
-		}
-	}()
+
+	// Cargar el archivo .env
+	if err := godotenv.Load(); err != nil {
+		log.Print("No .env file found")
+	}
+	_, err := db.Connect()
+	if err != nil {
+		log.Fatal("Error connecting to the database: ", err)
+	}
+
 
 
 	
 
 	router := gin.Default()
-
 
 	// Swagger endpoint
     url := ginSwagger.URL("http://localhost:3001/swagger/doc.json") // The url pointing to API definition
